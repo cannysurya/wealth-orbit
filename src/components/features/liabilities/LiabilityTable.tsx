@@ -10,9 +10,10 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { LiabilityForm } from "./LiabilityForm";
 
 interface Liability {
     id: string;
@@ -68,7 +69,7 @@ export function LiabilityTable() {
         return (
             <div className="text-center p-12 bg-muted/5 rounded-lg border border-dashed border-muted">
                 <h3 className="text-lg font-medium">No liabilities tracked</h3>
-                <p className="text-muted-foreground mt-1">Enjoy your freedom or track a loan if you have one.</p>
+                <p className="text-muted-foreground mt-1">Add your first liability to start tracking.</p>
             </div>
         );
     }
@@ -84,7 +85,7 @@ export function LiabilityTable() {
                         <TableHead className="text-right">Interest Rate</TableHead>
                         <TableHead className="text-right">EMI</TableHead>
                         <TableHead className="text-right">End Date</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead className="w-[100px]"></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -99,14 +100,28 @@ export function LiabilityTable() {
                                 {liability.endDate ? format(new Date(liability.endDate), "MMM yyyy") : "-"}
                             </TableCell>
                             <TableCell>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                    onClick={() => deleteMutation.mutate(liability.id)}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                    <LiabilityForm
+                                        initialData={liability}
+                                        trigger={
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                            >
+                                                <Edit2 className="h-4 w-4" />
+                                            </Button>
+                                        }
+                                    />
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                        onClick={() => deleteMutation.mutate(liability.id)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </TableCell>
                         </TableRow>
                     ))}

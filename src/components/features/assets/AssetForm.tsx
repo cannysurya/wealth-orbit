@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Plus, RefreshCcw } from "lucide-react";
+import { Loader2, Plus, Edit2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -35,43 +35,74 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const formSchema = z.object({
     name: z.string().min(2, {
         message: "Name must be at least 2 characters.",
     }),
-    type: z.string({
-        required_error: "Please select an asset type.",
-    }),
+    type: z.string().min(1, "Please select an asset type."),
     investedAmount: z.coerce.number().min(0, "Amount must be positive"),
-    currentValue: z.coerce.number().min(0, "Value must be positive"),
     returnRate: z.coerce.number().min(0, "Rate must be positive").max(100, "Rate too high").default(10), // CAGR
+    interestType: z.enum(["SIMPLE", "COMPOUND"]).default("COMPOUND"),
 });
 
-export function AssetForm() {
+interface AssetFormProps {
+    initialData?: any;
+    trigger?: React.ReactNode;
+}
+
+export function AssetForm({ initialData, trigger }: AssetFormProps) {
     const [open, setOpen] = useState(false);
     const queryClient = useQueryClient();
+    const isEditing = !!initialData;
 
     const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as any,
         defaultValues: {
             name: "",
+            type: "",
             investedAmount: 0,
-            currentValue: 0,
             returnRate: 10,
+            interestType: "COMPOUND",
         },
     });
 
+    useEffect(() => {
+        if (open) {
+            if (initialData) {
+                form.reset({
+                    name: initialData.name,
+                    type: initialData.type,
+                    investedAmount: initialData.investedAmount,
+                    returnRate: initialData.returnRate,
+                    interestType: initialData.interestType || "COMPOUND",
+                });
+            } else {
+                form.reset({
+                    name: "",
+                    type: "",
+                    investedAmount: 0,
+                    returnRate: 10,
+                    interestType: "COMPOUND",
+                });
+            }
+        }
+    }, [open, initialData, form]);
+
     const mutation = useMutation({
         mutationFn: async (values: z.infer<typeof formSchema>) => {
-            const response = await fetch("/api/assets", {
-                method: "POST",
+            const url = isEditing ? `/api/assets/${initialData.id}` : "/api/assets";
+            const method = isEditing ? "PUT" : "POST";
+
+            const response = await fetch(url, {
+                method: method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(values),
             });
 
             if (!response.ok) {
-                throw new Error("Failed to create asset");
+                throw new Error(isEditing ? "Failed to update asset" : "Failed to create asset");
             }
 
             return response.json();
@@ -79,8 +110,8 @@ export function AssetForm() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["assets"] });
             setOpen(false);
-            form.reset();
-            toast.success("Asset added successfully");
+            if (!isEditing) form.reset();
+            toast.success(isEditing ? "Asset updated successfully" : "Asset added successfully");
         },
         onError: (error) => {
             toast.error(`Error: ${error.message}`);
@@ -94,15 +125,17 @@ export function AssetForm() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
-                    <Plus className="h-4 w-4" /> Add Asset
-                </Button>
+                {trigger || (
+                    <Button className="gap-2">
+                        <Plus className="h-4 w-4" /> Add Asset
+                    </Button>
+                )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] glass bg-background/80 backdrop-blur-xl border-white/10">
+            <DialogContent className="sm:max-w-[500px] glass bg-background/80 backdrop-blur-xl border-white/10">
                 <DialogHeader>
-                    <DialogTitle>Add New Asset</DialogTitle>
+                    <DialogTitle>{isEditing ? "Edit Asset" : "Add New Asset"}</DialogTitle>
                     <DialogDescription>
-                        Track a new investment or asset here.
+                        {isEditing ? "Update your asset details." : "Track a new investment or asset here."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -166,32 +199,51 @@ export function AssetForm() {
                             />
                             <FormField
                                 control={form.control}
-                                name="currentValue"
+                                name="returnRate"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Current Value (₹)</FormLabel>
+                                        <FormLabel>Return Rate (%)</FormLabel>
                                         <FormControl>
-                                            <Input type="number" {...field} />
+                                            <div className="flex items-center gap-2">
+                                                <Input type="number" step="0.1" {...field} />
+                                                <span className="text-muted-foreground text-sm">%</span>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
                         </div>
-
                         <FormField
                             control={form.control}
-                            name="returnRate"
+                            name="interestType"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Expected Return (CAGR %)</FormLabel>
+                                    <FormLabel>Interest Type</FormLabel>
                                     <FormControl>
-                                        <div className="flex items-center gap-2">
-                                            <Input type="number" step="0.1" {...field} />
-                                            <span className="text-muted-foreground text-sm">%</span>
-                                        </div>
+                                        <RadioGroup
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                            className="flex flex-col space-y-1"
+                                        >
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl>
+                                                    <RadioGroupItem value="COMPOUND" />
+                                                </FormControl>
+                                                <FormLabel className="font-normal">
+                                                    Compounding (CAGR)
+                                                </FormLabel>
+                                            </FormItem>
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl>
+                                                    <RadioGroupItem value="SIMPLE" />
+                                                </FormControl>
+                                                <FormLabel className="font-normal">
+                                                    Simple Interest
+                                                </FormLabel>
+                                            </FormItem>
+                                        </RadioGroup>
                                     </FormControl>
-                                    <FormDescription>Used for future projections.</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -200,12 +252,12 @@ export function AssetForm() {
                         <DialogFooter>
                             <Button type="submit" disabled={mutation.isPending}>
                                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Add Asset
+                                {isEditing ? "Update Asset" : "Add Asset"}
                             </Button>
                         </DialogFooter>
                     </form>
                 </Form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

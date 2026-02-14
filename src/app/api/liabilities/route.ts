@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(liability, { status: 201 });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: error.errors }, { status: 400 });
+            return NextResponse.json({ error: (error as any).errors || (error as any).issues }, { status: 400 });
         }
         console.error(error);
         return NextResponse.json({ error: "Failed to create liability" }, { status: 500 });

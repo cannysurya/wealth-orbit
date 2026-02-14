@@ -7,9 +7,9 @@ import { z } from "zod";
 const assetSchema = z.object({
     type: z.string(),
     name: z.string().min(1, "Name is required"),
-    currentValue: z.number().min(0),
     investedAmount: z.number().min(0),
     returnRate: z.number().min(0),
+    interestType: z.enum(["SIMPLE", "COMPOUND"]).default("COMPOUND"),
 });
 
 export async function GET(req: NextRequest) {
@@ -50,9 +50,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(asset, { status: 201 });
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: error.errors }, { status: 400 });
-        }
+        if (error instanceof z.ZodError) return NextResponse.json({ error: (error as any).errors || (error as any).issues }, { status: 400 });
         return NextResponse.json({ error: "Failed to create asset" }, { status: 500 });
     }
 }

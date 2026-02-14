@@ -151,3 +151,15 @@
     @apply bg-card/60 backdrop-blur-md border-border/50 shadow-sm hover:shadow-md transition-all duration-300;
   }
 }
+
+/* Hide numeric input spinners */
+@layer base {
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}

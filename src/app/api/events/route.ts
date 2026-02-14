@@ -8,6 +8,7 @@ const eventSchema = z.object({
     name: z.string().min(1, "Name is required"),
     cost: z.number().min(0),
     date: z.string(), // YYYY-MM-DD
+    type: z.enum(["EXPENSE", "INCOME"]).default("EXPENSE"),
 });
 
 export async function GET(req: NextRequest) {
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
                 name: validatedData.name,
                 cost: validatedData.cost,
                 date: new Date(validatedData.date),
+                type: validatedData.type,
                 userId: session.user.id,
             },
         });
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(event, { status: 201 });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: error.errors }, { status: 400 });
+            return NextResponse.json({ error: (error as any).errors || (error as any).issues }, { status: 400 });
         }
         return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
     }

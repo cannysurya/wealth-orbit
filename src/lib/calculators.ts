@@ -9,9 +9,9 @@ export interface ProjectionPoint {
 }
 
 export interface Asset {
-    currentValue: number;
     returnRate: number; // %
-    investedAmount?: number;
+    investedAmount: number;
+    interestType?: string; // SIMPLE or COMPOUND
 }
 
 export interface Liability {
@@ -25,6 +25,7 @@ export interface LifeEvent {
     name: string;
     cost: number;
     date: string | Date;
+    type?: string; // EXPENSE or INCOME
 }
 
 export function calculateProjections(
@@ -41,7 +42,11 @@ export function calculateProjections(
 
     // Let's do iterative to handle "cash/assets reduction due to events"
 
-    let currentAssets = assets.map(a => ({ ...a }));
+    // Start with investedAmount as current value
+    let currentAssets = assets.map(a => ({
+        ...a,
+        currentValue: a.investedAmount
+    }));
     let currentLiabilities = liabilities.map(l => ({ ...l }));
 
     for (let i = 0; i <= yearsToProject; i++) {
@@ -51,10 +56,28 @@ export function calculateProjections(
         // Applying growth to assets
         // If i > 0, we grow the previous year's assets
         if (i > 0) {
-            currentAssets = currentAssets.map(asset => ({
-                ...asset,
-                currentValue: asset.currentValue * (1 + asset.returnRate / 100)
-            }));
+            currentAssets = currentAssets.map(asset => {
+                let newValue = asset.currentValue;
+
+                if (asset.interestType === "SIMPLE") {
+                    // Simple Interest: Interest is calculated on the principal (investedAmount)
+                    // Gain = Principal * Rate
+                    // NewValue = PreviousValue + Gain
+                    const annualGain = asset.investedAmount * (asset.returnRate / 100);
+                    newValue = asset.currentValue + annualGain;
+                } else {
+                    // Compound Interest (Default)
+                    // Since this loop runs annually, we apply 1 year of growth to the accumulated value.
+                    // NewValue = PreviousValue * (1 + AnnualRate)
+                    // This allows us to handle correctly situations where the principal is reduced by Life Events in intermediate years.
+                    newValue = asset.currentValue * (1 + asset.returnRate / 100);
+                }
+
+                return {
+                    ...asset,
+                    currentValue: newValue
+                };
+            });
         }
 
         // 2. Calculate Liabilities (Amortization)
@@ -91,33 +114,34 @@ export function calculateProjections(
         let eventNames: string[] = [];
 
         yearEvents.forEach(e => {
-            eventCost += e.cost;
-            eventNames.push(e.name);
-
-            // Subtract cost from assets?
-            // We assume we pay from assets (liquidate or cash).
-            // For simplicity, we reduce proportionaly from all assets or just "Total Assets" figure?
-            // Better to reduce from "currentAssets" proportionally to simulate liquidation.
-            // Or specific asset type "CASH".
-            // Let's reduce from total by reducing each asset by percentage?
-            // Total Assets = Sum(currentAssets)
-            // Ratio = (Total - Cost) / Total
-            // Apply Ratio to all assets.
+            if (e.type === "INCOME") {
+                eventCost -= e.cost; // Negative cost = Income
+                eventNames.push(`${e.name} (+${Math.round(e.cost)})`);
+            } else {
+                eventCost += e.cost;
+                eventNames.push(`${e.name} (-${Math.round(e.cost)})`);
+            }
         });
 
         let totalAssetValue = currentAssets.reduce((sum, a) => sum + a.currentValue, 0);
 
-        if (eventCost > 0 && totalAssetValue > 0) {
+        if (eventCost !== 0) {
             let remainingAssetValue = totalAssetValue - eventCost;
-            if (remainingAssetValue < 0) remainingAssetValue = 0; // Debt trap?
 
-            const ratio = remainingAssetValue / totalAssetValue;
-            currentAssets = currentAssets.map(a => ({
-                ...a,
-                currentValue: a.currentValue * ratio
-            }));
+            // If strictly negative remaining value, floor at 0 (debt trap scenario not fully modeled)
+            if (remainingAssetValue < 0) remainingAssetValue = 0;
 
-            totalAssetValue = remainingAssetValue;
+            if (totalAssetValue > 0) {
+                const ratio = remainingAssetValue / totalAssetValue;
+                currentAssets = currentAssets.map(a => ({
+                    ...a,
+                    currentValue: a.currentValue * ratio
+                }));
+                totalAssetValue = remainingAssetValue;
+            }
+            // Note: If totalAssetValue is 0 and we have income, 
+            // strictly speaking we should add it to a new asset or a default "Savings" asset.
+            // For this version, we'll accept the limitation that you need at least one asset to grow wealth.
         }
 
         const totalLiabilityValue = currentLiabilities.reduce((sum, l) => sum + l.outstandingAmount, 0);

@@ -10,16 +10,17 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash2, TrendingUp } from "lucide-react";
+import { Loader2, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
+import { AssetForm } from "./AssetForm";
 
 interface Asset {
     id: string;
     name: string;
     type: string;
     investedAmount: number;
-    currentValue: number;
     returnRate: number;
+    interestType: string;
     updatedAt: string;
 }
 
@@ -80,48 +81,46 @@ export function AssetTable() {
                         <TableHead>Asset Name</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead className="text-right">Invested</TableHead>
-                        <TableHead className="text-right">Current Value</TableHead>
-                        <TableHead className="text-right">Gain/Loss</TableHead>
-                        <TableHead className="text-right">CAGR</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead className="text-right">Return</TableHead>
+                        <TableHead className="w-[100px]"></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {assets.map((asset) => {
-                        const gain = asset.currentValue - asset.investedAmount;
-                        const gainPercent = asset.investedAmount > 0
-                            ? (gain / asset.investedAmount) * 100
-                            : 0;
-                        const isPositive = gain >= 0;
-
                         return (
                             <TableRow key={asset.id} className="hover:bg-muted/5">
                                 <TableCell className="font-medium">{asset.name}</TableCell>
                                 <TableCell className="text-muted-foreground text-xs uppercase tracking-wider">{asset.type}</TableCell>
                                 <TableCell className="text-right">₹{asset.investedAmount.toLocaleString()}</TableCell>
-                                <TableCell className="text-right font-bold">₹{asset.currentValue.toLocaleString()}</TableCell>
-                                <TableCell className={`text-right ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                                <TableCell className="text-right text-muted-foreground">
                                     <div className="flex flex-col items-end">
-                                        <span className="text-xs">
-                                            {isPositive ? "+" : ""}
-                                            {gainPercent.toFixed(1)}%
-                                        </span>
-                                        <span>
-                                            {isPositive ? "+" : ""}
-                                            ₹{gain.toLocaleString()}
-                                        </span>
+                                        <span>{asset.returnRate}%</span>
+                                        <span className="text-[10px] uppercase">{asset.interestType === "SIMPLE" ? "Simple" : "CAGR"}</span>
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-right text-muted-foreground">{asset.returnRate}%</TableCell>
                                 <TableCell>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                        onClick={() => deleteMutation.mutate(asset.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        <AssetForm
+                                            initialData={asset}
+                                            trigger={
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                </Button>
+                                            }
+                                        />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                            onClick={() => deleteMutation.mutate(asset.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         );

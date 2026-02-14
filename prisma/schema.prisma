@@ -3,10 +3,12 @@
 
 generator client {
   provider = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
   provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -25,15 +27,14 @@ model User {
 model Asset {
   id             String   @id @default(cuid())
   userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   type           String   // STOCK, MF, FD, REAL_ESTATE, GOLD, CRYPTO, CASH_BANK, OTHER
   name           String
-  currentValue   Float
   investedAmount Float
   returnRate     Float    // CAGR or expected return %
+  interestType   String   @default("COMPOUND") // SIMPLE, COMPOUND
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Liability {
@@ -55,6 +56,7 @@ model Liability {
 model LifeEvent {
   id        String   @id @default(cuid())
   userId    String
+  type      String   @default("EXPENSE") // EXPENSE, INCOME
   name      String   // Marriage, House, Kids, Retirement
   cost      Float
   date      DateTime // Expected date

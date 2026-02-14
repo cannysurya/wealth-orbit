@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Plus, CalendarIcon } from "lucide-react";
+import { Loader2, Plus, Edit2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -37,45 +37,83 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar"; // Wait, I didn't install calendar. I should probably use simple date input or install calendar. 
-// I installed "shadcn add ... dialog ...". I did NOT install calendar.
-// I'll use a simple input type="date" for now to save time/complexity or just simple text.
-// Or I can quickly add calendar if I want to be fancy. "npx shadcn@latest add calendar popover".
-// Let's use input type="date" for simplicity in V1.
 
 const formSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
-    type: z.string({ required_error: "Please select a liability type." }),
+    type: z.string().min(1, "Please select a liability type."),
     outstandingAmount: z.coerce.number().min(0, "Amount must be positive"),
     interestRate: z.coerce.number().min(0, "Rate must be positive").max(100, "Rate too high"),
     emi: z.coerce.number().min(0, "EMI must be positive"),
     endDate: z.string().optional(), // YYYY-MM-DD
 });
 
-export function LiabilityForm() {
+interface LiabilityFormProps {
+    initialData?: any;
+    trigger?: React.ReactNode;
+}
+
+export function LiabilityForm({ initialData, trigger }: LiabilityFormProps) {
     const [open, setOpen] = useState(false);
     const queryClient = useQueryClient();
+    const isEditing = !!initialData;
 
     const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as any,
         defaultValues: {
             name: "",
+            type: "",
             outstandingAmount: 0,
             interestRate: 8.5,
             emi: 0,
         },
     });
 
+    useEffect(() => {
+        if (open) {
+            if (initialData) {
+                // Ensure date is in YYYY-MM-DD format for input type="date"
+                let formattedDate = "";
+                if (initialData.endDate) {
+                    try {
+                        formattedDate = new Date(initialData.endDate).toISOString().split('T')[0];
+                    } catch (e) { /* ignore */ }
+                }
+
+                form.reset({
+                    name: initialData.name,
+                    type: initialData.type,
+                    outstandingAmount: initialData.outstandingAmount,
+                    interestRate: initialData.interestRate,
+                    emi: initialData.emi,
+                    endDate: formattedDate,
+                });
+            } else {
+                form.reset({
+                    name: "",
+                    type: "",
+                    outstandingAmount: 0,
+                    interestRate: 8.5,
+                    emi: 0,
+                    endDate: "",
+                });
+            }
+        }
+    }, [open, initialData, form]);
+
+
     const mutation = useMutation({
         mutationFn: async (values: z.infer<typeof formSchema>) => {
-            const response = await fetch("/api/liabilities", {
-                method: "POST",
+            const url = isEditing ? `/api/liabilities/${initialData.id}` : "/api/liabilities";
+            const method = isEditing ? "PUT" : "POST";
+
+            const response = await fetch(url, {
+                method: method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(values),
             });
 
             if (!response.ok) {
-                throw new Error("Failed to create liability");
+                throw new Error(isEditing ? "Failed to update liability" : "Failed to create liability");
             }
 
             return response.json();
@@ -83,8 +121,8 @@ export function LiabilityForm() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["liabilities"] });
             setOpen(false);
-            form.reset();
-            toast.success("Liability added successfully");
+            if (!isEditing) form.reset();
+            toast.success(isEditing ? "Liability updated successfully" : "Liability added successfully");
         },
         onError: (error) => {
             toast.error(`Error: ${error.message}`);
@@ -98,15 +136,17 @@ export function LiabilityForm() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2" variant="destructive">
-                    <Plus className="h-4 w-4" /> Add Liability
-                </Button>
+                {trigger || (
+                    <Button className="gap-2" variant="destructive">
+                        <Plus className="h-4 w-4" /> Add Liability
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] glass bg-background/80 backdrop-blur-xl border-white/10">
                 <DialogHeader>
-                    <DialogTitle>Add New Liability</DialogTitle>
+                    <DialogTitle>{isEditing ? "Edit Liability" : "Add New Liability"}</DialogTitle>
                     <DialogDescription>
-                        Track loans, credit card debt, or other liabilities.
+                        {isEditing ? "Update your liability details." : "Track loans, credit card debt, or other liabilities."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -216,7 +256,7 @@ export function LiabilityForm() {
                         <DialogFooter>
                             <Button type="submit" disabled={mutation.isPending} variant="destructive">
                                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Add Liability
+                                {isEditing ? "Update Liability" : "Add Liability"}
                             </Button>
                         </DialogFooter>
                     </form>

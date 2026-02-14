@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
     Area,
     AreaChart,
@@ -15,6 +15,8 @@ import {
 import { calculateProjections, Asset, Liability, LifeEvent, ProjectionPoint } from "@/lib/calculators";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface ProjectionChartProps {
     assets: any[];
@@ -23,31 +25,40 @@ interface ProjectionChartProps {
 }
 
 export function ProjectionChart({ assets, liabilities, events }: ProjectionChartProps) {
+    const [projectionYears, setProjectionYears] = useState(20);
+    const [tempYears, setTempYears] = useState("20");
+
     const data = useMemo(() => {
-        if (!assets || !liabilities || !events) return [];
+        const safeAssets = Array.isArray(assets) ? assets : [];
+        const safeLiabilities = Array.isArray(liabilities) ? liabilities : [];
+        const safeEvents = Array.isArray(events) ? events : [];
+
+        if (!safeAssets.length && !safeLiabilities.length && !safeEvents.length) return [];
 
         // Map DB objects to Calculator interfaces
-        const calcAssets: Asset[] = assets.map((a: any) => ({
+        const calcAssets: Asset[] = safeAssets.map((a: any) => ({
             currentValue: a.currentValue,
             returnRate: a.returnRate,
-            investedAmount: a.investedAmount
+            investedAmount: a.investedAmount,
+            interestType: a.interestType
         }));
 
-        const calcLiabilities: Liability[] = liabilities.map((l: any) => ({
+        const calcLiabilities: Liability[] = safeLiabilities.map((l: any) => ({
             outstandingAmount: l.outstandingAmount,
             interestRate: l.interestRate,
             emi: l.emi,
             endDate: l.endDate
         }));
 
-        const calcEvents: LifeEvent[] = events.map((e: any) => ({
+        const calcEvents: LifeEvent[] = safeEvents.map((e: any) => ({
             name: e.name,
             cost: e.cost,
-            date: e.date
+            date: e.date,
+            type: e.type
         }));
 
-        return calculateProjections(calcAssets, calcLiabilities, calcEvents, 20);
-    }, [assets, liabilities, events]);
+        return calculateProjections(calcAssets, calcLiabilities, calcEvents, projectionYears);
+    }, [assets, liabilities, events, projectionYears]);
 
     if (!data.length) return <div>No data to project</div>;
 
@@ -57,17 +68,24 @@ export function ProjectionChart({ assets, liabilities, events }: ProjectionChart
         return `₹${value.toLocaleString()}`;
     };
 
+    const handleUpdate = () => {
+        const val = parseInt(tempYears);
+        if (val > 0 && val <= 50) {
+            setProjectionYears(val);
+        }
+    };
+
     return (
         <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="glass-card">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Net Worth (20Y)</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Net Worth ({projectionYears}Y)</CardTitle></CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{formatCurrency(data[data.length - 1].netWorth)}</div>
                     </CardContent>
                 </Card>
                 <Card className="glass-card">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Assets (20Y)</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Assets ({projectionYears}Y)</CardTitle></CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-primary">{formatCurrency(data[data.length - 1].totalAssets)}</div>
                     </CardContent>
@@ -76,8 +94,22 @@ export function ProjectionChart({ assets, liabilities, events }: ProjectionChart
                     <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Debt Free By</CardTitle></CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-destructive">
-                            {data.find(d => d.totalLiabilities <= 0)?.year || "20+ Years"}
+                            {data.find(d => d.totalLiabilities <= 0)?.year || `${projectionYears}+ Years`}
                         </div>
+                    </CardContent>
+                </Card>
+                <Card className="glass-card">
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Projection Duration (Years)</CardTitle></CardHeader>
+                    <CardContent className="flex gap-2">
+                        <Input
+                            value={tempYears}
+                            onChange={(e) => setTempYears(e.target.value)}
+                            type="number"
+                            min="1"
+                            max="50"
+                            className="w-full"
+                        />
+                        <Button onClick={handleUpdate} size="sm">Update</Button>
                     </CardContent>
                 </Card>
             </div>
@@ -115,10 +147,14 @@ export function ProjectionChart({ assets, liabilities, events }: ProjectionChart
                                                 <p className="text-primary">Net Worth: {formatCurrency(point.netWorth)}</p>
                                                 <p className="text-green-500">Assets: {formatCurrency(point.totalAssets)}</p>
                                                 <p className="text-destructive">Liabilities: {formatCurrency(point.totalLiabilities)}</p>
-                                                {point.eventCost > 0 && (
+                                                {point.eventCost !== 0 && (
                                                     <div className="mt-2 pt-2 border-t border-border">
-                                                        <p className="font-semibold text-yellow-500">Event: {point.eventName}</p>
-                                                        <p className="text-yellow-500">- {formatCurrency(point.eventCost)}</p>
+                                                        <p className={`font-semibold ${point.eventCost < 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                                            Event: {point.eventName}
+                                                        </p>
+                                                        <p className={point.eventCost < 0 ? "text-emerald-500" : "text-red-500"}>
+                                                            {point.eventCost < 0 ? "+" : "-"} {formatCurrency(Math.abs(point.eventCost))}
+                                                        </p>
                                                     </div>
                                                 )}
                                             </div>
@@ -137,6 +173,25 @@ export function ProjectionChart({ assets, liabilities, events }: ProjectionChart
                             fill="url(#colorNetWorth)"
                             name="Net Worth"
                             strokeWidth={2}
+                            dot={(props: any) => {
+                                const { payload } = props;
+                                if (payload.eventCost !== 0) {
+                                    return (
+                                        <svg
+                                            cx={props.cx}
+                                            cy={props.cy}
+                                            width={10}
+                                            height={10}
+                                            fill={payload.eventCost < 0 ? "#10b981" : "#ef4444"}
+                                            viewBox="0 0 10 10"
+                                            style={{ transform: `translate(${props.cx - 5}px, ${props.cy - 5}px)` }}
+                                        >
+                                            <circle cx="5" cy="5" r="4" />
+                                        </svg>
+                                    );
+                                }
+                                return <></>;
+                            }}
                         />
                         <Area
                             type="monotone"

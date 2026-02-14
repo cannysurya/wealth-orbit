@@ -7,17 +7,29 @@ import { Loader2 } from "lucide-react";
 export default function ProjectionsPage() {
     const { data: assets, isLoading: assetsLoading } = useQuery({
         queryKey: ["assets"],
-        queryFn: async () => (await fetch("/api/assets")).json(),
+        queryFn: async () => {
+            const res = await fetch("/api/assets");
+            if (!res.ok) throw new Error("Failed to fetch assets");
+            return res.json();
+        },
     });
 
     const { data: liabilities, isLoading: liabilitiesLoading } = useQuery({
         queryKey: ["liabilities"],
-        queryFn: async () => (await fetch("/api/liabilities")).json(),
+        queryFn: async () => {
+            const res = await fetch("/api/liabilities");
+            if (!res.ok) throw new Error("Failed to fetch liabilities");
+            return res.json();
+        },
     });
 
     const { data: events, isLoading: eventsLoading } = useQuery({
         queryKey: ["events"],
-        queryFn: async () => (await fetch("/api/events")).json(),
+        queryFn: async () => {
+            const res = await fetch("/api/events");
+            if (!res.ok) throw new Error("Failed to fetch events");
+            return res.json();
+        },
     });
 
     if (assetsLoading || liabilitiesLoading || eventsLoading) {

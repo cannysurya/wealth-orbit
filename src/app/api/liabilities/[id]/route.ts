@@ -55,7 +55,7 @@ export async function PUT(
         return NextResponse.json(updatedLiability);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: error.errors }, { status: 400 });
+            return NextResponse.json({ error: (error as any).errors || (error as any).issues }, { status: 400 });
         }
         return NextResponse.json({ error: "Failed to update liability" }, { status: 500 });
     }

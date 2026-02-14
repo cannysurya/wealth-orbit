@@ -1,74 +1,159 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, CreditCard } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, CreditCard, Percent } from "lucide-react";
 import { Loader2 } from "lucide-react";
+import { formatCurrency } from "@/lib/utils"; // Using centralized utility
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { BreakdownPieChart } from "./BreakdownPieChart";
 
 export function DashboardSummary() {
+    const [selectedCategory, setSelectedCategory] = useState<"assets" | "liabilities" | null>(null);
+    const [viewType, setViewType] = useState<"name" | "type">("name");
+
     const { data: assets, isLoading: assetsLoading } = useQuery({
         queryKey: ["assets"],
-        queryFn: async () => (await fetch("/api/assets")).json(),
+        queryFn: async () => {
+            const res = await fetch("/api/assets");
+            if (!res.ok) throw new Error("Failed to fetch assets");
+            return res.json();
+        },
     });
 
     const { data: liabilities, isLoading: liabilitiesLoading } = useQuery({
         queryKey: ["liabilities"],
-        queryFn: async () => (await fetch("/api/liabilities")).json(),
+        queryFn: async () => {
+            const res = await fetch("/api/liabilities");
+            if (!res.ok) throw new Error("Failed to fetch liabilities");
+            return res.json();
+        },
     });
 
     if (assetsLoading || liabilitiesLoading) {
         return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
     }
 
-    const totalAssets = assets?.reduce((sum: number, a: any) => sum + a.currentValue, 0) || 0;
-    const totalLiabilities = liabilities?.reduce((sum: number, l: any) => sum + l.outstandingAmount, 0) || 0;
+    const totalAssets = Array.isArray(assets) ? assets.reduce((sum: number, a: any) => sum + a.investedAmount, 0) : 0;
+    const totalLiabilities = Array.isArray(liabilities) ? liabilities.reduce((sum: number, l: any) => sum + l.outstandingAmount, 0) : 0;
     const netWorth = totalAssets - totalLiabilities;
 
-    const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0
-        }).format(val);
+    // Debt to Asset Ratio
+    const debtToAssetRatio = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
+
+    let ratioColor = "text-green-500";
+    let ratioText = "Healthy";
+    let ratioIconColor = "text-green-500";
+
+    if (debtToAssetRatio >= 30 && debtToAssetRatio < 60) {
+        ratioColor = "text-yellow-500";
+        ratioText = "Moderate";
+        ratioIconColor = "text-yellow-500";
+    } else if (debtToAssetRatio >= 60) {
+        ratioColor = "text-red-500";
+        ratioText = "High Risk";
+        ratioIconColor = "text-red-500";
+    }
+
+    const getPieData = () => {
+        const items = selectedCategory === "assets" ? assets : liabilities;
+        if (!items) return [];
+
+        if (viewType === "name") {
+            const valueKey = selectedCategory === "assets" ? "investedAmount" : "outstandingAmount";
+            return items.map((item: any) => ({ name: item.name, value: item[valueKey] }));
+        } else {
+            // Group by type
+            const grouped = items.reduce((acc: any, item: any) => {
+                const type = item.type || "Other";
+                const value = selectedCategory === "assets" ? item.investedAmount : item.outstandingAmount;
+                acc[type] = (acc[type] || 0) + value;
+                return acc;
+            }, {});
+            return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+        }
     };
 
     return (
-        <div className="grid gap-4 md:grid-cols-3">
-            <div className="glass-card rounded-xl p-6 relative overflow-hidden group">
-                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Wallet className="w-24 h-24" />
+        <>
+            <div className="grid gap-4 md:grid-cols-4">
+                <div
+                    className="glass-card rounded-xl p-6 relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => { setSelectedCategory("assets"); setViewType("name"); }}
+                >
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Wallet className="w-24 h-24" />
+                    </div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Total Assets</h3>
+                    <div className="mt-2 text-2xl font-bold text-primary flex items-baseline gap-2">
+                        {formatCurrency(totalAssets)}
+                    </div>
                 </div>
-                <h3 className="text-sm font-medium text-muted-foreground">Total Assets</h3>
-                <div className="mt-2 text-3xl font-bold text-primary flex items-baseline gap-2">
-                    {formatCurrency(totalAssets)}
-                    <span className="text-xs text-green-500 flex items-center bg-green-500/10 px-1 rounded-sm">
-                        <ArrowUpRight className="w-3 h-3" /> Growth
-                    </span>
+
+                <div
+                    className="glass-card rounded-xl p-6 relative overflow-hidden group cursor-pointer hover:border-destructive/50 transition-colors"
+                    onClick={() => { setSelectedCategory("liabilities"); setViewType("name"); }}
+                >
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <CreditCard className="w-24 h-24 text-destructive" />
+                    </div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Total Liabilities</h3>
+                    <div className="mt-2 text-2xl font-bold text-destructive flex items-baseline gap-2">
+                        {formatCurrency(totalLiabilities)}
+                    </div>
+                </div>
+
+                <div className="glass-card rounded-xl p-6 relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Percent className={`w-24 h-24 ${ratioIconColor}`} />
+                    </div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Debt-to-Asset Ratio</h3>
+                    <div className={`mt-2 text-2xl font-bold ${ratioColor} flex items-baseline gap-2`}>
+                        {debtToAssetRatio.toFixed(1)}%
+                        <span className="text-xs text-muted-foreground">
+                            {ratioText}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="glass-card rounded-xl p-6 relative overflow-hidden group bg-gradient-to-br from-primary/10 to-purple-500/10 border-primary/20">
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <TrendingUp className="w-24 h-24 text-foreground" />
+                    </div>
+                    <h3 className="text-sm font-medium text-foreground">Net Worth</h3>
+                    <div className="mt-2 text-2xl font-bold text-foreground">
+                        {formatCurrency(netWorth)}
+                    </div>
                 </div>
             </div>
 
-            <div className="glass-card rounded-xl p-6 relative overflow-hidden group">
-                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <CreditCard className="w-24 h-24 text-destructive" />
-                </div>
-                <h3 className="text-sm font-medium text-muted-foreground">Total Liabilities</h3>
-                <div className="mt-2 text-3xl font-bold text-destructive flex items-baseline gap-2">
-                    {formatCurrency(totalLiabilities)}
-                    <span className="text-xs text-red-500 flex items-center bg-red-500/10 px-1 rounded-sm">
-                        <ArrowDownRight className="w-3 h-3" /> Debt
-                    </span>
-                </div>
-            </div>
-
-            <div className="glass-card rounded-xl p-6 relative overflow-hidden group bg-gradient-to-br from-primary/10 to-purple-500/10 border-primary/20">
-                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <TrendingUp className="w-24 h-24 text-foreground" />
-                </div>
-                <h3 className="text-sm font-medium text-foreground">Net Worth</h3>
-                <div className="mt-2 text-3xl font-bold text-foreground">
-                    {formatCurrency(netWorth)}
-                </div>
-            </div>
-        </div>
+            <Dialog open={!!selectedCategory} onOpenChange={(open) => !open && setSelectedCategory(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center justify-between pr-8">
+                            <span>{selectedCategory === "assets" ? "Asset Distribution" : "Liability Distribution"}</span>
+                            <div className="flex bg-secondary/50 rounded-lg p-1 text-xs">
+                                <button
+                                    className={`px-3 py-1 rounded-md transition-all ${viewType === "name" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                                    onClick={() => setViewType("name")}
+                                >
+                                    By Name
+                                </button>
+                                <button
+                                    className={`px-3 py-1 rounded-md transition-all ${viewType === "type" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                                    onClick={() => setViewType("type")}
+                                >
+                                    By Type
+                                </button>
+                            </div>
+                        </DialogTitle>
+                        <DialogDescription>
+                            Breakdown of your {selectedCategory} by {viewType}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <BreakdownPieChart data={getPieData()} title={selectedCategory || ""} />
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

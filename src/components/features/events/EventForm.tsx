@@ -19,6 +19,13 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     Form,
     FormControl,
     FormDescription,
@@ -33,6 +40,7 @@ const formSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
     cost: z.coerce.number().min(0, "Cost must be positive"),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"), // YYYY-MM-DD
+    type: z.enum(["EXPENSE", "INCOME"]).default("EXPENSE"),
 });
 
 export function EventForm() {
@@ -40,10 +48,11 @@ export function EventForm() {
     const queryClient = useQueryClient();
 
     const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as any,
         defaultValues: {
             name: "",
             cost: 0,
+            type: "EXPENSE",
         },
     });
 
@@ -76,22 +85,46 @@ export function EventForm() {
         mutation.mutate(values);
     }
 
+    const eventType = form.watch("type");
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button className="gap-2" variant="secondary">
-                    <Plus className="h-4 w-4" /> Add Life Event
+                    <Plus className="h-4 w-4" /> Add Event
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] glass bg-background/80 backdrop-blur-xl border-white/10">
                 <DialogHeader>
-                    <DialogTitle>Add Life Event / Goal</DialogTitle>
+                    <DialogTitle>Add Event</DialogTitle>
                     <DialogDescription>
-                        Major expenses to plan for (Marriage, House, Education).
+                        Track a major financial event (expense or income).
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="type"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Event Type</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select type" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="EXPENSE">Expense (House, Wedding, etc.)</SelectItem>
+                                            <SelectItem value="INCOME">Income (Bonus, Inheritance, etc.)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
                         <FormField
                             control={form.control}
                             name="name"
@@ -99,7 +132,7 @@ export function EventForm() {
                                 <FormItem>
                                     <FormLabel>Event Name</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="e.g. Dream House" {...field} />
+                                        <Input placeholder={eventType === "EXPENSE" ? "e.g. Buying a House" : "e.g. Annual Bonus"} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -112,7 +145,7 @@ export function EventForm() {
                                 name="cost"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Estimated Cost (₹)</FormLabel>
+                                        <FormLabel>{eventType === "EXPENSE" ? "Estimated Cost (₹)" : "Estimated Value (₹)"}</FormLabel>
                                         <FormControl>
                                             <Input type="number" {...field} />
                                         </FormControl>
@@ -138,7 +171,7 @@ export function EventForm() {
                         <DialogFooter>
                             <Button type="submit" disabled={mutation.isPending}>
                                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Add Goal
+                                Add Event
                             </Button>
                         </DialogFooter>
                     </form>

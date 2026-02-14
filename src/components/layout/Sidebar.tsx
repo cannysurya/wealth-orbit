@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
     LayoutDashboard,
@@ -36,17 +37,17 @@ const navItems = [
         icon: TrendingUp,
     },
     {
-        title: "Goals & Events",
-        href: "/dashboard/goals",
+        title: "Events",
+        href: "/dashboard/events",
         icon: Target,
     },
 ];
 
-export function Sidebar() {
+export function SidebarContent() {
     const pathname = usePathname();
 
     return (
-        <div className="flex h-screen w-64 flex-col justify-between border-r border-border bg-sidebar text-sidebar-foreground glass">
+        <div className="flex h-full flex-col justify-between text-sidebar-foreground">
             <div className="px-4 py-6">
                 <Link href="/dashboard" className="flex items-center gap-2 px-2">
                     <div className="h-8 w-8 rounded-lg bg-primary/20 p-1 flex items-center justify-center">
@@ -74,17 +75,29 @@ export function Sidebar() {
                 </div>
             </div>
             <div className="p-4 border-t border-border/50">
-                <Link href="/settings">
+                <Link href="/dashboard/settings">
                     <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground">
                         <Settings className="h-4 w-4" />
                         Settings
                     </Button>
                 </Link>
-                <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 mt-1">
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 mt-1"
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                >
                     <LogOut className="h-4 w-4" />
                     Sign Out
                 </Button>
             </div>
+        </div>
+    );
+}
+
+export function Sidebar({ className }: { className?: string }) {
+    return (
+        <div className={cn("flex h-screen w-64 flex-col border-r border-border bg-sidebar glass", className)}>
+            <SidebarContent />
         </div>
     );
 }

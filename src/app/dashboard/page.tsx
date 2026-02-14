@@ -37,7 +37,7 @@ export default function DashboardPage() {
                         <Button variant="ghost" className="gap-2">View Full Analysis <ArrowRight className="w-4 h-4" /></Button>
                     </Link>
                 </div>
-                <div className="h-[300px]">
+                <div className="h-[500px]">
                     {/* Reuse chart but maybe simplified? Or just same chart */}
                     <ProjectionChart assets={assets || []} liabilities={liabilities || []} events={events || []} />
                 </div>
