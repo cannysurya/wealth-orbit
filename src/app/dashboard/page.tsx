@@ -1,0 +1,47 @@
+"use client"; // Needs client for summary or use server component for fetching
+
+// We can just use the DashboardSummary client component
+import { DashboardSummary } from "@/components/features/dashboard/DashboardSummary";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { ProjectionChart } from "@/components/features/projections/ProjectionChart";
+import { useQuery } from "@tanstack/react-query";
+
+export default function DashboardPage() {
+    // We can fetch data here too for the small chart
+    const { data: assets } = useQuery({ queryKey: ["assets"], queryFn: async () => (await fetch("/api/assets")).json() });
+    const { data: liabilities } = useQuery({ queryKey: ["liabilities"], queryFn: async () => (await fetch("/api/liabilities")).json() });
+    const { data: events } = useQuery({ queryKey: ["events"], queryFn: async () => (await fetch("/api/events")).json() });
+
+    return (
+        <div className="space-y-8">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+                    <p className="text-muted-foreground">Overview of your financial universe.</p>
+                </div>
+                <div className="flex gap-2">
+                    <Link href="/dashboard/assets">
+                        <Button>Manage Assets</Button>
+                    </Link>
+                </div>
+            </div>
+
+            <DashboardSummary />
+
+            <div className="glass-card rounded-xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-semibold text-lg">Financial Projection (Snapshot)</h3>
+                    <Link href="/dashboard/projections">
+                        <Button variant="ghost" className="gap-2">View Full Analysis <ArrowRight className="w-4 h-4" /></Button>
+                    </Link>
+                </div>
+                <div className="h-[300px]">
+                    {/* Reuse chart but maybe simplified? Or just same chart */}
+                    <ProjectionChart assets={assets || []} liabilities={liabilities || []} events={events || []} />
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  assets        Asset[]
+  liabilities   Liability[]
+  lifeEvents    LifeEvent[]
+}
+
+model Asset {
+  id             String   @id @default(cuid())
+  userId         String
+  type           String   // STOCK, MF, FD, REAL_ESTATE, GOLD, CRYPTO, CASH_BANK, OTHER
+  name           String
+  currentValue   Float
+  investedAmount Float
+  returnRate     Float    // CAGR or expected return %
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Liability {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String   // HOME_LOAN, CAR_LOAN, PERSONAL_LOAN, CREDIT_CARD, OTHER
+  name              String
+  outstandingAmount Float
+  interestRate      Float
+  emi               Float
+  startDate         DateTime?
+  endDate           DateTime? // Estimated or Actual
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LifeEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   // Marriage, House, Kids, Retirement
+  cost      Float
+  date      DateTime // Expected date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
