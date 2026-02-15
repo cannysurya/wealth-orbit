@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -50,9 +51,7 @@ export function SidebarContent() {
         <div className="flex h-full flex-col justify-between text-sidebar-foreground">
             <div className="px-4 py-6">
                 <Link href="/dashboard" className="flex items-center gap-2 px-2">
-                    <div className="h-8 w-8 rounded-lg bg-primary/20 p-1 flex items-center justify-center">
-                        <div className="w-4 h-4 rounded-full bg-primary animate-pulse" />
-                    </div>
+                    <Image src="/logo.svg" alt="Wealth Orbit" width={32} height={32} className="rounded-lg shadow-lg" />
                     <span className="text-xl font-bold tracking-tight text-white">WealthOrbit</span>
                 </Link>
                 <div className="mt-8 flex flex-col gap-2">
