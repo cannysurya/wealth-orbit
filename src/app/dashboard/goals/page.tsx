@@ -91,7 +91,7 @@ export default function GoalsPage() {
         <div className="space-y-8 p-4 md:p-8 pt-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Smart Planning</h2>
+                    <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Review Goals</h2>
                     <p className="text-muted-foreground mt-1">AI-driven financial strategy & goal tracking.</p>
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -262,9 +262,7 @@ export default function GoalsPage() {
                                                 size="icon"
                                                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                                 onClick={() => {
-                                                    if (confirm("Are you sure you want to delete this goal?")) {
-                                                        deleteGoalMutation.mutate(goal.id);
-                                                    }
+                                                    deleteGoalMutation.mutate(goal.id);
                                                 }}
                                                 disabled={deleteGoalMutation.isPending}
                                             >

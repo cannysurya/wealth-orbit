@@ -22,6 +22,7 @@ model User {
   assets        Asset[]
   liabilities   Liability[]
   goals         Goal[]
+  fireSettings  FireSettings?
 }
 
 model Goal {
@@ -91,4 +92,18 @@ model LiabilityModification {
   updatedAt   DateTime @updatedAt
 
   liability   Liability @relation(fields: [liabilityId], references: [id], onDelete: Cascade)
+}
+
+model FireSettings {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  annualExpenses    Float    @default(0)
+  inflationRate     Float    @default(6.0)
+  safeWithdrawalRate Float   @default(4.0)
+  currentAge        Int?
+  retirementAgeGoal Int?
+  maxAge            Int      @default(100)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

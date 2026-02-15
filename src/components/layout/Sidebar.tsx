@@ -12,7 +12,8 @@ import {
     TrendingUp,
     Settings,
     LogOut,
-    Target
+    Target,
+    Flame
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -23,9 +24,14 @@ const navItems = [
         icon: LayoutDashboard,
     },
     {
-        title: "Smart Planning",
+        title: "Review Goals",
         href: "/dashboard/goals",
         icon: Target,
+    },
+    {
+        title: "FIRE Analysis",
+        href: "/dashboard/fire",
+        icon: Flame,
     },
     {
         title: "Assets",

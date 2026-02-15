@@ -8,6 +8,8 @@ import { ArrowRight } from "lucide-react";
 import { ProjectionChart } from "@/components/features/projections/ProjectionChart";
 import { useQuery } from "@tanstack/react-query";
 
+import { ProjectionYearsInput } from "@/components/ui/projection-years-input";
+
 export default function DashboardPage() {
     // We can fetch data here too for the small chart
     const { data: assets } = useQuery({ queryKey: ["assets"], queryFn: async () => (await fetch("/api/assets")).json() });
@@ -21,6 +23,7 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground hidden md:block">Overview of your financial universe.</p>
                 </div>
                 <div className="flex gap-2">
+                    <ProjectionYearsInput />
                     <Link href="/dashboard/assets">
                         <Button>Manage Assets</Button>
                     </Link>

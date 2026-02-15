@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { ProjectionChart } from "@/components/features/projections/ProjectionChart";
 import { Loader2 } from "lucide-react";
 
+import { ProjectionYearsInput } from "@/components/ui/projection-years-input";
+
 export default function ProjectionsPage() {
     const { data: assets, isLoading: assetsLoading } = useQuery({
         queryKey: ["assets"],
@@ -31,9 +33,12 @@ export default function ProjectionsPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Future & Projections</h1>
-                <p className="text-muted-foreground">See how your wealth grows over time.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Future & Projections</h1>
+                    <p className="text-muted-foreground">See how your wealth grows over time.</p>
+                </div>
+                <ProjectionYearsInput />
             </div>
 
             <ProjectionChart
