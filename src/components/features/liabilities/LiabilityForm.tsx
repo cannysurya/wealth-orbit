@@ -242,11 +242,10 @@ export function LiabilityForm({ initialData, trigger }: LiabilityFormProps) {
                                 name="endDate"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Expected End Date</FormLabel>
+                                        <FormLabel>Expected End Date (opt)</FormLabel>
                                         <FormControl>
                                             <Input type="date" {...field} />
                                         </FormControl>
-                                        <FormDescription className="text-xs">Optional</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
