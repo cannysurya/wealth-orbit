@@ -21,7 +21,20 @@ model User {
 
   assets        Asset[]
   liabilities   Liability[]
-  lifeEvents    LifeEvent[]
+  goals         Goal[]
+}
+
+model Goal {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  targetAmount  Float
+  targetDate    DateTime
+  currentAmount Float     @default(0)
+  priority      String    @default("MEDIUM") // HIGH, MEDIUM, LOW
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Asset {
@@ -35,6 +48,8 @@ model Asset {
   interestType   String   @default("COMPOUND") // SIMPLE, COMPOUND
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  modifications  AssetModification[]
 }
 
 model Liability {
@@ -45,23 +60,35 @@ model Liability {
   outstandingAmount Float
   interestRate      Float
   emi               Float
-  startDate         DateTime?
-  endDate           DateTime? // Estimated or Actual
+  startDate         DateTime? // Date when loan started
+  endDate           DateTime? // Estimated or Actual end date
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  modifications     LiabilityModification[]
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model LifeEvent {
+model AssetModification {
   id        String   @id @default(cuid())
-  userId    String
-  type      String   @default("EXPENSE") // EXPENSE, INCOME
-  name      String   // Marriage, House, Kids, Retirement
-  cost      Float
-  date      DateTime // Expected date
+  assetId   String
+  amount    Float    // Positive for investment/bonus, Negative for withdrawal
+  date      DateTime
+  note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+model LiabilityModification {
+  id          String   @id @default(cuid())
+  liabilityId String
+  amount      Float    // Amount paid (reduces principal)
+  date        DateTime
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  liability   Liability @relation(fields: [liabilityId], references: [id], onDelete: Cascade)
 }

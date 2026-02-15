@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     try {
         const assets = await db.asset.findMany({
             where: { userId: session.user.id },
+            include: { modifications: true },
             orderBy: { createdAt: "desc" },
         });
         return NextResponse.json(assets);

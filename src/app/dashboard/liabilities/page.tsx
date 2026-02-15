@@ -4,10 +4,10 @@ import { LiabilityTable } from "@/components/features/liabilities/LiabilityTable
 export default function LiabilitiesPage() {
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Liabilities</h1>
-                    <p className="text-muted-foreground">Track your debts and plan your freedom.</p>
+                    <p className="text-muted-foreground hidden md:block">Track your debts and plan your freedom.</p>
                 </div>
                 <LiabilityForm />
             </div>

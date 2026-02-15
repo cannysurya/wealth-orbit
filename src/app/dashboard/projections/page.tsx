@@ -23,16 +23,9 @@ export default function ProjectionsPage() {
         },
     });
 
-    const { data: events, isLoading: eventsLoading } = useQuery({
-        queryKey: ["events"],
-        queryFn: async () => {
-            const res = await fetch("/api/events");
-            if (!res.ok) throw new Error("Failed to fetch events");
-            return res.json();
-        },
-    });
 
-    if (assetsLoading || liabilitiesLoading || eventsLoading) {
+
+    if (assetsLoading || liabilitiesLoading) {
         return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
     }
 
@@ -46,7 +39,6 @@ export default function ProjectionsPage() {
             <ProjectionChart
                 assets={assets || []}
                 liabilities={liabilities || []}
-                events={events || []}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -55,7 +47,6 @@ export default function ProjectionsPage() {
                     <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                         <li>Asset growth is compounded annually based on your inputs.</li>
                         <li>Liabilities are amortized monthly with interest.</li>
-                        <li>Life Events serve as cash outflows in their respective years.</li>
                         <li>Inflation is not yet adjusted (Nominal Value).</li>
                     </ul>
                 </div>

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { AssetForm } from "./AssetForm";
+import { ModificationDialog } from "../modifications/ModificationDialog";
 
 interface Asset {
     id: string;
@@ -22,6 +23,7 @@ interface Asset {
     returnRate: number;
     interestType: string;
     updatedAt: string;
+    modifications: any[]; // Using any for simplicity here, or import the type
 }
 
 export function AssetTable() {
@@ -100,6 +102,12 @@ export function AssetTable() {
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-1">
+                                        <ModificationDialog
+                                            type="asset"
+                                            itemId={asset.id}
+                                            itemName={asset.name}
+                                            existingModifications={asset.modifications}
+                                        />
                                         <AssetForm
                                             initialData={asset}
                                             trigger={
@@ -127,6 +135,6 @@ export function AssetTable() {
                     })}
                 </TableBody>
             </Table>
-        </div>
+        </div >
     );
 }

@@ -19,28 +19,48 @@ export function BreakdownPieChart({ data, title }: BreakdownPieChartProps) {
     }
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                     <Pie
                         data={data}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
+                        labelLine={true}
+                        outerRadius={65}
                         fill="#8884d8"
                         dataKey="value"
                         nameKey="name"
-                        label={(props: any) => `${props.name} ${(props.percent * 100).toFixed(0)}%`}
+                        label={(props: any) => {
+                            const { name, percent } = props;
+                            if (percent < 0.01) return null;
+                            const truncatedName = name.length > 4 ? name.substring(0, 3) + ".." : name;
+                            return `${truncatedName} ${(percent * 100).toFixed(0)}%`;
+                        }}
+                        className="text-[10px]"
                     >
                         {data.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                     </Pie>
                     <Tooltip
-                        formatter={(value: any) => [formatCurrency(value), "Value"]}
+                        contentStyle={{
+                            backgroundColor: "var(--card)",
+                            borderColor: "var(--border)",
+                            borderRadius: "var(--radius)",
+                            color: "var(--foreground)",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        }}
+                        itemStyle={{ color: "var(--foreground)" }}
+                        formatter={(value: any, name: any, props: any) => [formatCurrency(value), props.payload.name]}
                     />
-                    <Legend />
+                    <Legend
+                        iconType="circle"
+                        formatter={(value, entry: any) => {
+                            const { payload } = entry;
+                            return <span className="text-xs text-foreground ml-1">{value} ({formatCurrency(payload.value)})</span>;
+                        }}
+                    />
                 </PieChart>
             </ResponsiveContainer>
         </div>

@@ -12,7 +12,7 @@ import {
     ReferenceLine,
     Legend
 } from "recharts";
-import { calculateProjections, Asset, Liability, LifeEvent, ProjectionPoint } from "@/lib/calculators";
+import { calculateProjections, Asset, Liability, ProjectionPoint } from "@/lib/calculators";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,44 +21,44 @@ import { Button } from "@/components/ui/button";
 interface ProjectionChartProps {
     assets: any[];
     liabilities: any[];
-    events: any[];
 }
 
-export function ProjectionChart({ assets, liabilities, events }: ProjectionChartProps) {
+export function ProjectionChart({ assets, liabilities }: ProjectionChartProps) {
     const [projectionYears, setProjectionYears] = useState(20);
     const [tempYears, setTempYears] = useState("20");
+    const [visible, setVisible] = useState({
+        netWorth: true,
+        assets: false,
+        liabilities: true
+    });
 
     const data = useMemo(() => {
         const safeAssets = Array.isArray(assets) ? assets : [];
         const safeLiabilities = Array.isArray(liabilities) ? liabilities : [];
-        const safeEvents = Array.isArray(events) ? events : [];
 
-        if (!safeAssets.length && !safeLiabilities.length && !safeEvents.length) return [];
+        if (!safeAssets.length && !safeLiabilities.length) return [];
 
         // Map DB objects to Calculator interfaces
         const calcAssets: Asset[] = safeAssets.map((a: any) => ({
+            name: a.name, // Added name
             currentValue: a.currentValue,
             returnRate: a.returnRate,
             investedAmount: a.investedAmount,
-            interestType: a.interestType
+            interestType: a.interestType,
+            modifications: a.modifications
         }));
 
         const calcLiabilities: Liability[] = safeLiabilities.map((l: any) => ({
+            name: l.name, // Added name
             outstandingAmount: l.outstandingAmount,
             interestRate: l.interestRate,
             emi: l.emi,
-            endDate: l.endDate
+            endDate: l.endDate,
+            modifications: l.modifications
         }));
 
-        const calcEvents: LifeEvent[] = safeEvents.map((e: any) => ({
-            name: e.name,
-            cost: e.cost,
-            date: e.date,
-            type: e.type
-        }));
-
-        return calculateProjections(calcAssets, calcLiabilities, calcEvents, projectionYears);
-    }, [assets, liabilities, events, projectionYears]);
+        return calculateProjections(calcAssets, calcLiabilities, projectionYears);
+    }, [assets, liabilities, projectionYears]);
 
     if (!data.length) return <div>No data to project</div>;
 
@@ -72,12 +72,14 @@ export function ProjectionChart({ assets, liabilities, events }: ProjectionChart
         const val = parseInt(tempYears);
         if (val > 0 && val <= 50) {
             setProjectionYears(val);
+        } else {
+            setTempYears(projectionYears.toString());
         }
     };
 
     return (
         <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="glass-card">
                     <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Net Worth ({projectionYears}Y)</CardTitle></CardHeader>
                     <CardContent>
@@ -99,112 +101,165 @@ export function ProjectionChart({ assets, liabilities, events }: ProjectionChart
                     </CardContent>
                 </Card>
                 <Card className="glass-card">
-                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Projection Duration (Years)</CardTitle></CardHeader>
-                    <CardContent className="flex gap-2">
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Duration (Yrs)</CardTitle></CardHeader>
+                    <CardContent>
                         <Input
                             value={tempYears}
                             onChange={(e) => setTempYears(e.target.value)}
+                            onBlur={handleUpdate}
+                            onKeyDown={(e) => e.key === "Enter" && handleUpdate()}
                             type="number"
                             min="1"
                             max="50"
                             className="w-full"
                         />
-                        <Button onClick={handleUpdate} size="sm">Update</Button>
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="h-[400px] w-full glass-card p-4 rounded-xl">
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                        <defs>
-                            <linearGradient id="colorNetWorth" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="oklch(0.65 0.15 190)" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="oklch(0.65 0.15 190)" stopOpacity={0} />
-                            </linearGradient>
-                            <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
-                        <XAxis dataKey="year" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis
-                            stroke="#888888"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={formatCurrency}
-                        />
-                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
-                        <Tooltip
-                            content={({ active, payload, label }) => {
-                                if (active && payload && payload.length) {
-                                    const point = payload[0].payload as ProjectionPoint;
-                                    return (
-                                        <div className="glass bg-background/95 p-3 rounded-lg border border-border shadow-xl text-xs">
-                                            <p className="font-bold mb-2 text-base">{label}</p>
-                                            <div className="space-y-1">
-                                                <p className="text-primary">Net Worth: {formatCurrency(point.netWorth)}</p>
-                                                <p className="text-green-500">Assets: {formatCurrency(point.totalAssets)}</p>
-                                                <p className="text-destructive">Liabilities: {formatCurrency(point.totalLiabilities)}</p>
-                                                {point.eventCost !== 0 && (
-                                                    <div className="mt-2 pt-2 border-t border-border">
-                                                        <p className={`font-semibold ${point.eventCost < 0 ? "text-emerald-500" : "text-red-500"}`}>
-                                                            Event: {point.eventName}
-                                                        </p>
-                                                        <p className={point.eventCost < 0 ? "text-emerald-500" : "text-red-500"}>
-                                                            {point.eventCost < 0 ? "+" : "-"} {formatCurrency(Math.abs(point.eventCost))}
-                                                        </p>
-                                                    </div>
-                                                )}
+
+
+            <div className="glass-card p-4 rounded-xl space-y-4">
+                <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+                    <button
+                        onClick={() => setVisible(prev => ({ ...prev, netWorth: !prev.netWorth }))}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${visible.netWorth ? "bg-[oklch(0.65_0.15_190)]/10 border-[oklch(0.65_0.15_190)] text-[oklch(0.65_0.15_190)] font-medium" : "border-transparent text-muted-foreground hover:bg-muted"}`}
+                    >
+                        <div className={`w-2 h-2 rounded-full ${visible.netWorth ? "bg-[oklch(0.65_0.15_190)]" : "bg-gray-400"}`} />
+                        Net Worth
+                    </button>
+                    <button
+                        onClick={() => setVisible(prev => ({ ...prev, assets: !prev.assets }))}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${visible.assets ? "bg-emerald-500/10 border-emerald-500 text-emerald-500 font-medium" : "border-transparent text-muted-foreground hover:bg-muted"}`}
+                    >
+                        <div className={`w-2 h-2 rounded-full ${visible.assets ? "bg-emerald-500" : "bg-gray-400"}`} />
+                        Total Assets
+                    </button>
+                    <button
+                        onClick={() => setVisible(prev => ({ ...prev, liabilities: !prev.liabilities }))}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border ${visible.liabilities ? "bg-red-500/10 border-red-500 text-red-500 font-medium" : "border-transparent text-muted-foreground hover:bg-muted"}`}
+                    >
+                        <div className={`w-2 h-2 rounded-full ${visible.liabilities ? "bg-red-500" : "bg-gray-400"}`} />
+                        Total Liabilities
+                    </button>
+                </div>
+
+                <div className="h-[400px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="colorNetWorth" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="oklch(0.65 0.15 190)" stopOpacity={0.8} />
+                                    <stop offset="95%" stopColor="oklch(0.65 0.15 190)" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <XAxis dataKey="year" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis
+                                stroke="#888888"
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={formatCurrency}
+                            />
+                            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
+                            <Tooltip
+                                content={({ active, payload, label }) => {
+                                    if (active && payload && payload.length) {
+                                        const point = payload[0].payload as ProjectionPoint;
+                                        return (
+                                            <div className="glass bg-background/95 p-3 rounded-lg border border-border shadow-xl text-xs">
+                                                <p className="font-bold mb-2 text-base">{label}</p>
+                                                <div className="space-y-1">
+                                                    <p className="text-primary">Net Worth: {formatCurrency(point.netWorth)}</p>
+                                                    <p className="text-emerald-500">Assets: {formatCurrency(point.totalAssets)}</p>
+                                                    <p className="text-red-500">Liabilities: {formatCurrency(point.totalLiabilities)}</p>
+                                                    {point.eventCost !== 0 && (
+                                                        <div className="mt-2 pt-2 border-t border-border">
+                                                            <p className={`font-semibold ${point.eventCost < 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                                                Event: {point.eventName}
+                                                            </p>
+                                                            <p className={point.eventCost < 0 ? "text-emerald-500" : "text-red-500"}>
+                                                                {point.eventCost < 0 ? "+" : "-"} {formatCurrency(Math.abs(point.eventCost))}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            }}
-                        />
-                        <Legend />
-                        <Area
-                            type="monotone"
-                            dataKey="netWorth"
-                            stroke="oklch(0.65 0.15 190)"
-                            fillOpacity={1}
-                            fill="url(#colorNetWorth)"
-                            name="Net Worth"
-                            strokeWidth={2}
-                            dot={(props: any) => {
-                                const { payload } = props;
-                                if (payload.eventCost !== 0) {
-                                    return (
-                                        <svg
-                                            cx={props.cx}
-                                            cy={props.cy}
-                                            width={10}
-                                            height={10}
-                                            fill={payload.eventCost < 0 ? "#10b981" : "#ef4444"}
-                                            viewBox="0 0 10 10"
-                                            style={{ transform: `translate(${props.cx - 5}px, ${props.cy - 5}px)` }}
-                                        >
-                                            <circle cx="5" cy="5" r="4" />
-                                        </svg>
-                                    );
-                                }
-                                return <></>;
-                            }}
-                        />
-                        <Area
-                            type="monotone"
-                            dataKey="totalLiabilities"
-                            stroke="#ef4444"
-                            fillOpacity={0.1}
-                            fill="#ef4444"
-                            name="Liabilities"
-                            strokeWidth={2}
-                        />
-                    </AreaChart>
-                </ResponsiveContainer>
+                                        );
+                                    }
+                                    return null;
+                                }}
+                            />
+                            {/* Custom Legend replaces default Legend */}
+
+                            {/* Net Worth Line (Blue) - Always has dots if events exist */}
+                            {visible.netWorth && (
+                                <Area
+                                    type="monotone"
+                                    dataKey="netWorth"
+                                    stroke="oklch(0.65 0.15 190)"
+                                    fillOpacity={1}
+                                    fill="url(#colorNetWorth)"
+                                    name="Net Worth"
+                                    strokeWidth={2}
+                                    animationDuration={1000}
+                                    dot={(props: any) => {
+                                        const { payload } = props;
+                                        if (payload.eventCost !== 0) {
+                                            return (
+                                                <svg
+                                                    cx={props.cx}
+                                                    cy={props.cy}
+                                                    width={10}
+                                                    height={10}
+                                                    fill={payload.eventCost < 0 ? "#10b981" : "#ef4444"}
+                                                    viewBox="0 0 10 10"
+                                                    style={{ transform: `translate(${props.cx - 5}px, ${props.cy - 5}px)` }}
+                                                >
+                                                    <circle cx="5" cy="5" r="4" />
+                                                </svg>
+                                            );
+                                        }
+                                        return <></>;
+                                    }}
+                                />
+                            )}
+
+                            {/* Assets Line (Green) - No dots */}
+                            {visible.assets && (
+                                <Area
+                                    type="monotone"
+                                    dataKey="totalAssets"
+                                    stroke="#10b981"
+                                    fillOpacity={1}
+                                    fill="url(#colorAssets)"
+                                    name="Total Assets"
+                                    strokeWidth={2}
+                                    animationDuration={1000}
+                                />
+                            )}
+
+                            {/* Liabilities Line (Red) - No dots */}
+                            {visible.liabilities && (
+                                <Area
+                                    type="monotone"
+                                    dataKey="totalLiabilities"
+                                    stroke="#ef4444"
+                                    fillOpacity={0.1}
+                                    fill="#ef4444"
+                                    name="Liabilities"
+                                    strokeWidth={2}
+                                    animationDuration={1000}
+                                />
+                            )}
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
-        </div>
+        </div >
     );
 }

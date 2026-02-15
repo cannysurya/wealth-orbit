@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ user: userWithoutPassword }, { status: 201 });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: (error as any).errors || (error as any).issues }, { status: 400 });
+            return NextResponse.json({ error: (error as any).errors }, { status: 400 });
         }
         return NextResponse.json(
             { error: "Failed to create user" },

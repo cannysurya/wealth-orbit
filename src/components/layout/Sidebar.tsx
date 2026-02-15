@@ -22,6 +22,11 @@ const navItems = [
         icon: LayoutDashboard,
     },
     {
+        title: "Smart Planning",
+        href: "/dashboard/goals",
+        icon: Target,
+    },
+    {
         title: "Assets",
         href: "/dashboard/assets",
         icon: Wallet,
@@ -35,11 +40,6 @@ const navItems = [
         title: "Projections",
         href: "/dashboard/projections",
         icon: TrendingUp,
-    },
-    {
-        title: "Events",
-        href: "/dashboard/events",
-        icon: Target,
     },
 ];
 

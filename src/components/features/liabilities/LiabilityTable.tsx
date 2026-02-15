@@ -14,6 +14,7 @@ import { Loader2, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { LiabilityForm } from "./LiabilityForm";
+import { ModificationDialog } from "../modifications/ModificationDialog";
 
 interface Liability {
     id: string;
@@ -23,6 +24,7 @@ interface Liability {
     interestRate: number;
     emi: number;
     endDate?: string;
+    modifications: any[];
 }
 
 export function LiabilityTable() {
@@ -101,6 +103,12 @@ export function LiabilityTable() {
                             </TableCell>
                             <TableCell>
                                 <div className="flex items-center gap-1">
+                                    <ModificationDialog
+                                        type="liability"
+                                        itemId={liability.id}
+                                        itemName={liability.name}
+                                        existingModifications={liability.modifications}
+                                    />
                                     <LiabilityForm
                                         initialData={liability}
                                         trigger={

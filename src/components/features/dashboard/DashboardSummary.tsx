@@ -76,7 +76,8 @@ export function DashboardSummary() {
 
     return (
         <>
-            <div className="grid gap-4 md:grid-cols-4">
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div
                     className="glass-card rounded-xl p-6 relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors"
                     onClick={() => { setSelectedCategory("assets"); setViewType("name"); }}
