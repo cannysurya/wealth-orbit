@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:push": "prisma db push --accept-data-loss"
+    "db:push": "prisma db push --accept-data-loss",
+    "postinstall": "prisma generate && prisma db push --accept-data-loss"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
