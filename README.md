@@ -1,6 +1,7 @@
 # Wealth Orbit
 
 Wealth Orbit is an open-source personal finance and asset management application designed to help you track your net worth, manage liabilities, and precisely plan your journey to Financial Independence, Retire Early (FIRE).
+<img width="3173" height="1815" alt="image" src="https://github.com/user-attachments/assets/5757fe97-bfc3-4025-8472-63942400407b" />
 
 ## Tech Stack
 
