@@ -153,7 +153,7 @@ export function BreakdownTable({ items }: BreakdownTableProps) {
                     </div>
 
                     {/* Expandable Table Rows */}
-                    <div className="flex flex-col">
+                    <div className="flex flex-col max-h-[100%] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary">
                         {processedCategories.map((category) => (
                             <div key={category.name} className="flex flex-col border-b last:border-b-0 py-1">
                                 {/* Category Row */}

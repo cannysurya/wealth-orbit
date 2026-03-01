@@ -77,7 +77,7 @@ export function LiabilityTable() {
     }
 
     return (
-        <div className="rounded-md border border-white/10 glass overflow-hidden">
+        <div className="rounded-md border border-white/10 glass overflow-x-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary">
             <Table>
                 <TableHeader className="bg-muted/50">
                     <TableRow>

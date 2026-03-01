@@ -166,7 +166,7 @@ export default function GoalsPage() {
                             <CardTitle className="text-xl">Strategy & Recommendations</CardTitle>
                             <CardDescription>Actionable steps to improve your wealth trajectory.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        <CardContent className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary">
                             {insightsLoading ? (
                                 <div className="space-y-3">
                                     <div className="h-16 w-full bg-secondary/30 animate-pulse rounded-lg" />

@@ -109,12 +109,12 @@ export function DashboardSummary() {
             </div>
 
             <Dialog open={!!selectedCategory} onOpenChange={(open) => !open && setSelectedCategory(null)}>
-                <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent hover:scrollbar-thumb-primary">
                     <DialogHeader>
                         <DialogTitle className="flex items-center justify-between pr-8">
                             <span>{selectedCategory === "assets" ? "Asset Distribution" : "Liability Distribution"}</span>
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="flex items-center justify-between pr-8">
                             Breakdown of your {selectedCategory}.
                         </DialogDescription>
                     </DialogHeader>
