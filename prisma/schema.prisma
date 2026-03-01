@@ -32,7 +32,6 @@ model Goal {
   name          String
   targetAmount  Float
   targetDate    DateTime
-  currentAmount Float     @default(0)
   priority      String    @default("MEDIUM") // HIGH, MEDIUM, LOW
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

@@ -9,7 +9,6 @@ const createGoalSchema = z.object({
     name: z.string().min(1, "Name is required"),
     targetAmount: z.number().positive("Target amount must be positive"),
     targetDate: z.string().transform((str) => new Date(str)),
-    currentAmount: z.number().min(0).default(0),
     priority: z.enum(["HIGH", "MEDIUM", "LOW"]).default("MEDIUM"),
 });
 
