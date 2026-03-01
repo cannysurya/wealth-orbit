@@ -81,7 +81,6 @@ export default function GoalsPage() {
             name: formData.get("name"),
             targetAmount: parseFloat(formData.get("targetAmount") as string),
             targetDate: formData.get("targetDate"),
-            currentAmount: parseFloat(formData.get("currentAmount") as string) || 0,
         });
     };
 
@@ -112,10 +111,6 @@ export default function GoalsPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="targetAmount">Target Amount (₹)</Label>
                                 <Input id="targetAmount" name="targetAmount" type="number" step="1000" required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="currentAmount">Current Savings (Optional)</Label>
-                                <Input id="currentAmount" name="currentAmount" type="number" step="1000" placeholder="0" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="targetDate">Target Date</Label>
@@ -239,7 +234,6 @@ export default function GoalsPage() {
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {goals?.map((goal: any) => {
-                        const progress = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100);
                         // Use AI status if available
                         const status = insights?.goalAnalysis?.find((g: any) => g.name === goal.name)?.status;
 
@@ -275,11 +269,9 @@ export default function GoalsPage() {
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="flex justify-between text-sm font-medium">
-                                        <span>{formatCurrency(goal.currentAmount)}</span>
-                                        <span className="text-muted-foreground">of {formatCurrency(goal.targetAmount)}</span>
+                                    <div className="text-2xl font-bold">
+                                        {formatCurrency(goal.targetAmount)}
                                     </div>
-                                    <Progress value={progress} className={cn("h-2", status === "AT_RISK" ? "bg-red-950" : "")} />
                                     <div className="text-xs text-muted-foreground pt-2 border-t mt-4">
                                         {status === "AT_RISK" ? (
                                             <span className="text-red-400 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Projected to fail</span>

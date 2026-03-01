@@ -25,8 +25,8 @@ function analyzeGoals(goals: any[], projections: any[], totalAssets: number) {
         const projection = projections.find((p: any) => p.year === targetYear);
 
         // Sanity Check: If no assets and not reached goal, you cannot be on track.
-        if (totalAssets === 0 && goal.currentAmount < goal.targetAmount) {
-            const shortfall = goal.targetAmount - goal.currentAmount;
+        if (totalAssets === 0 && totalAssets < goal.targetAmount) {
+            const shortfall = goal.targetAmount - totalAssets;
             return {
                 name: goal.name,
                 status: "AT_RISK",

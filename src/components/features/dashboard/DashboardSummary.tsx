@@ -6,11 +6,10 @@ import { ArrowUpRight, ArrowDownRight, TrendingUp, Wallet, CreditCard, Percent }
 import { Loader2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils"; // Using centralized utility
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { BreakdownPieChart } from "./BreakdownPieChart";
+import { BreakdownTable } from "./BreakdownTable";
 
 export function DashboardSummary() {
     const [selectedCategory, setSelectedCategory] = useState<"assets" | "liabilities" | null>(null);
-    const [viewType, setViewType] = useState<"name" | "type">("name");
 
     const { data: assets, isLoading: assetsLoading } = useQuery({
         queryKey: ["assets"],
@@ -55,32 +54,13 @@ export function DashboardSummary() {
         ratioIconColor = "text-red-500";
     }
 
-    const getPieData = () => {
-        const items = selectedCategory === "assets" ? assets : liabilities;
-        if (!items) return [];
-
-        if (viewType === "name") {
-            const valueKey = selectedCategory === "assets" ? "investedAmount" : "outstandingAmount";
-            return items.map((item: any) => ({ name: item.name, value: item[valueKey] }));
-        } else {
-            // Group by type
-            const grouped = items.reduce((acc: any, item: any) => {
-                const type = item.type || "Other";
-                const value = selectedCategory === "assets" ? item.investedAmount : item.outstandingAmount;
-                acc[type] = (acc[type] || 0) + value;
-                return acc;
-            }, {});
-            return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-        }
-    };
-
     return (
         <>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div
                     className="glass-card rounded-xl p-6 relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors"
-                    onClick={() => { setSelectedCategory("assets"); setViewType("name"); }}
+                    onClick={() => setSelectedCategory("assets")}
                 >
                     <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Wallet className="w-24 h-24" />
@@ -93,7 +73,7 @@ export function DashboardSummary() {
 
                 <div
                     className="glass-card rounded-xl p-6 relative overflow-hidden group cursor-pointer hover:border-destructive/50 transition-colors"
-                    onClick={() => { setSelectedCategory("liabilities"); setViewType("name"); }}
+                    onClick={() => setSelectedCategory("liabilities")}
                 >
                     <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <CreditCard className="w-24 h-24 text-destructive" />
@@ -129,30 +109,16 @@ export function DashboardSummary() {
             </div>
 
             <Dialog open={!!selectedCategory} onOpenChange={(open) => !open && setSelectedCategory(null)}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center justify-between pr-8">
                             <span>{selectedCategory === "assets" ? "Asset Distribution" : "Liability Distribution"}</span>
-                            <div className="flex bg-secondary/50 rounded-lg p-1 text-xs">
-                                <button
-                                    className={`px-3 py-1 rounded-md transition-all ${viewType === "name" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                                    onClick={() => setViewType("name")}
-                                >
-                                    By Name
-                                </button>
-                                <button
-                                    className={`px-3 py-1 rounded-md transition-all ${viewType === "type" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                                    onClick={() => setViewType("type")}
-                                >
-                                    By Type
-                                </button>
-                            </div>
                         </DialogTitle>
                         <DialogDescription>
-                            Breakdown of your {selectedCategory} by {viewType}.
+                            Breakdown of your {selectedCategory}.
                         </DialogDescription>
                     </DialogHeader>
-                    <BreakdownPieChart data={getPieData()} title={selectedCategory || ""} />
+                    <BreakdownTable items={selectedCategory === "assets" ? assets || [] : liabilities || []} />
                 </DialogContent>
             </Dialog>
         </>
