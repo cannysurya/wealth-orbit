@@ -13,6 +13,9 @@ const COLORS = [
     "#ffc658", "#8dd1e1", "#a4de6c", "#d0ed57", "#ffc658"
 ];
 
+/**
+ * @deprecated Use `BreakdownTable` instead. Kept for legacy support or future reference.
+ */
 export function BreakdownPieChart({ data, title }: BreakdownPieChartProps) {
     if (!data || data.length === 0) {
         return <div className="text-center p-4 text-muted-foreground">No data available</div>;
