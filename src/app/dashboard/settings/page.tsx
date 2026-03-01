@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +11,24 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function SettingsPage() {
     const { data: session } = useSession();
+    const [apiKey, setApiKey] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        // Load API key from local storage on mount
+        const storedKey = localStorage.getItem("google_gemini_api_key");
+        if (storedKey) {
+            setApiKey(storedKey);
+        }
+    }, []);
+
+    const handleSaveAiSettings = () => {
+        setIsSaving(true);
+        localStorage.setItem("google_gemini_api_key", apiKey);
+        setTimeout(() => {
+            setIsSaving(false);
+        }, 500); // give a tiny bit of feedback
+    };
 
     return (
         <div className="space-y-8">
@@ -65,6 +85,33 @@ export default function SettingsPage() {
                                 <p className="text-sm text-muted-foreground">Toggle application theme.</p>
                             </div>
                             <Button variant="outline">System Default</Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>AI Preferences</CardTitle>
+                        <CardDescription>Configure settings for the AI Assistant.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="apiKey">Google Gemini API Key</Label>
+                            <Input
+                                id="apiKey"
+                                type="password"
+                                placeholder="AIzaSy..."
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Your API key is stored securely in your browser&apos;s local storage and is never sent to our servers.
+                            </p>
+                        </div>
+                        <div className="flex justify-end">
+                            <Button onClick={handleSaveAiSettings} disabled={isSaving}>
+                                {isSaving ? "Saving..." : "Save AI Settings"}
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>

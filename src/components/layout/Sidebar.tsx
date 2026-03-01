@@ -13,7 +13,8 @@ import {
     Settings,
     LogOut,
     Target,
-    Flame
+    Flame,
+    Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -47,6 +48,11 @@ const navItems = [
         title: "Projections",
         href: "/dashboard/projections",
         icon: TrendingUp,
+    },
+    {
+        title: "AI Assistant",
+        href: "/dashboard/ai-assistant",
+        icon: Bot,
     },
 ];
 
